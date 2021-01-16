@@ -27,7 +27,7 @@ def ec2_action(verb, instance=None):
     ec2 = boto3.resource('ec2')
     if verb != 'status':
         filter = [{
-            'Name':'tag:Name', 
+            'Name':'tag:Name',
             'Values': [instance]
         }]
     else:
@@ -36,12 +36,19 @@ def ec2_action(verb, instance=None):
         for tag in instance.tags:
             if tag['Key'] == 'Name':
                 instance_tag_name = tag['Value']
-                break
+            if tag['Key'] == 'Protocol':
+                instance_tag_protocol = tag['Value']
+            if tag['Key'] == 'Port':
+                instance_tag_port = tag['Value']
         response[instance_tag_name] = {
             'address': instance.public_dns_name,
             'last_start': str(instance.launch_time),
             'status': instance.state['Name']
         }
+        try:
+            response[instance_tag_name]['link'] = f'{instance_tag_protocol}://{instance.public_dns_name}:{instance_tag_port} '
+        except NameError:
+            pass
         try:
             if verb == 'start':
                 response = instance.start()
